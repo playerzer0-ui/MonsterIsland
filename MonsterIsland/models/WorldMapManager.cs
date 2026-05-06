@@ -18,15 +18,12 @@ namespace NodeTesting.models
         private Vector2 _targetCamPos = Vector2.Zero;
         private const float ZoomSpeed = 3f;
 
-        public WorldState State => _state;
-
         public WorldMapManager(PathMap pathMap, Camera camera)
         {
             _pathMap = pathMap;
             _camera = camera;
-            _targetCamPos = new Vector2(480, 320); 
+            _targetCamPos = new Vector2(480, 320);
             _camera.Position = _targetCamPos;
-            _targetZoom = 1f;
             _camera.Zoom = 1f;
         }
 
@@ -34,29 +31,25 @@ namespace NodeTesting.models
         {
             float dt = (float)gt.ElapsedGameTime.TotalSeconds;
 
-            // Always lerp toward target — handles both zoom in and zoom out
             _camera.Zoom = MathHelper.Lerp(_camera.Zoom, _targetZoom, ZoomSpeed * dt);
             _camera.Position = Vector2.Lerp(_camera.Position, _targetCamPos, ZoomSpeed * dt);
 
+            if (_pathMap.IsMoving) return;
+
             Point grid = _pathMap.PlayerGridPosition;
 
-            if (_state == WorldState.World)
-            {
-                ZoneDefinition zone = ZoneRegistry.Zones
-                    .FirstOrDefault(z => z.EntryTiles.Contains(grid));
+            ZoneDefinition zone = ZoneRegistry.Zones
+                .FirstOrDefault(z => z.EntryTiles.Contains(grid));
 
-                if (zone != null && !_pathMap.IsMoving)
-                    EnterZone(zone, grid);
+            if (zone != null)
+            {
+                _targetZoom = zone.ZoomLevel;
+                _targetCamPos = zone.ZoomTarget;
             }
-            else if (_state == WorldState.InZone)
+            else
             {
-                if (grid == _entryTile) return;
-
-                ZoneExit exit = _currentZone.Exits
-                    .FirstOrDefault(e => e.ZoneTile == grid);
-
-                if (exit != null && !_pathMap.IsMoving)
-                    ExitZone(exit);
+                _targetZoom = 1f;
+                _targetCamPos = new Vector2(480, 320);
             }
         }
 
