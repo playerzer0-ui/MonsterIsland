@@ -122,6 +122,13 @@ namespace NodeTesting.models
                 }
             }
         }
+        public void SetPlayerPosition(int col, int row)
+        {
+            playerGridPos = new Point(col, row);
+            playerWorldPos = GetTileCenterWorld(col, row);
+            targetWorldPos = playerWorldPos;
+            isMoving = false;
+        }
 
         /// <summary>
         /// Draws the map and player

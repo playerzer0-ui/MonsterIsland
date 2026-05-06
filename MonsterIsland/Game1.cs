@@ -11,9 +11,12 @@ namespace MonsterIsland
         private SpriteBatch _spriteBatch;
 
         Canvas canvas;
+        Camera camera;
         Sprite starter;
         Player player;
         TileMap path;
+        PathMap pathMap;
+        WorldMapManager worldManager;
 
         public Game1()
         {
@@ -44,9 +47,12 @@ namespace MonsterIsland
             canvas = new Canvas(_graphics.GraphicsDevice, 960, 640);
             canvas.SetDestinationRectangle();
 
+            pathMap = new PathMap("monster-island", 32, 32, "Maps/starter_path.csv", 8, 15);
+            camera = new Camera();
             starter = new Sprite("Maps/starter", new Vector2(480, 320));
-            player = new Player("characters/player", 2);
+            player = new Player("characters/player", 2, pathMap);
             path = new TileMap("monster-island",32,32,"Maps/starter_path.csv");
+            worldManager = new WorldMapManager(pathMap, camera);
         }
 
         protected override void Update(GameTime gameTime)
@@ -55,7 +61,7 @@ namespace MonsterIsland
                 Exit();
 
             player.Update(gameTime);
-
+            worldManager.Update(gameTime);
             // TODO: Add your update logic here
             canvas.SetResolution(_graphics.GraphicsDevice.Viewport.Width, _graphics.GraphicsDevice.Viewport.Height);
             base.Update(gameTime);
@@ -65,7 +71,7 @@ namespace MonsterIsland
         {
             canvas.Activate();
             // TODO: Add your drawing code here
-            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+            _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: camera.Transform());
             starter.Draw(Color.White);
             path.Draw();
             player.Draw(0);

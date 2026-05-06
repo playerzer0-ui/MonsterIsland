@@ -13,9 +13,9 @@ namespace MonsterIsland
         private PathMap _pathMap;
         private CollisionRect colRect;
         private KeyboardState old = Keyboard.GetState();
-        public Player(string Texture, int frames) : base(Texture, frames)
+        public Player(string Texture, int frames, PathMap path) : base(Texture, frames)
         {
-            _pathMap = new PathMap("monster-island", 32, 32, "Maps/starter_path.csv", 8, 14);
+            _pathMap = path;
             colRect = new CollisionRect(0, 0, 10, 10);
         }
         public void Update(GameTime gt)
