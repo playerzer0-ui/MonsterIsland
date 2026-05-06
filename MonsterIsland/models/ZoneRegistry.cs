@@ -15,7 +15,6 @@ namespace NodeTesting.models
         public List<Point> EntryTiles;   // ALL path tiles that border this zone
         public Vector2 ZoomTarget;       // world pixel the camera zooms toward
         public float ZoomLevel;
-        public List<ZoneExit> Exits;
     }
 
     public static class ZoneRegistry
@@ -36,13 +35,7 @@ namespace NodeTesting.models
                     new Point(16, 9),   // bottom entrance
                 },
                 ZoomTarget = new Vector2(16 * T, 7 * T),
-                ZoomLevel = 2.5f,
-                Exits = new List<ZoneExit>
-                {
-                    new ZoneExit { ZoneTile = new Point(15, 7), WorldTile = new Point(14, 7) },  // left exit
-                    new ZoneExit { ZoneTile = new Point(17, 7), WorldTile = new Point(18, 7) },  // right exit
-                    new ZoneExit { ZoneTile = new Point(16, 8), WorldTile = new Point(16, 9) },  // bottom exit
-                }
+                ZoomLevel = 2.5f
             },
 
             // Zone 1 — single tile, row 4 col 20
@@ -55,12 +48,7 @@ namespace NodeTesting.models
                     new Point(20, 5),   // path tile directly below zone tile
                 },
                 ZoomTarget = new Vector2(20 * T, 4 * T),
-                ZoomLevel = 3f,
-                Exits = new List<ZoneExit>
-                {
-                    // Only one way out — back down to the path
-                    new ZoneExit { ZoneTile = new Point(20, 4), WorldTile = new Point(20, 5) },
-                }
+                ZoomLevel = 3f
             },
 
             // Zone 2 — 3 tiles in a row, row 5 cols 6-8
@@ -73,12 +61,7 @@ namespace NodeTesting.models
                     new Point(8, 6),    // path tile below zone, col 8
                 },
                 ZoomTarget = new Vector2(7 * T, 5 * T),
-                ZoomLevel = 2.5f,
-                Exits = new List<ZoneExit>
-                {
-                    // Exit back down to the path
-                    new ZoneExit { ZoneTile = new Point(8, 5), WorldTile = new Point(8, 6) },
-                }
+                ZoomLevel = 2.5f
             },
 
             // Zone 3 — 2x3 block, rows 12-13 cols 7-9
@@ -91,12 +74,7 @@ namespace NodeTesting.models
                     new Point(8, 14),   // path tile below zone
                 },
                 ZoomTarget = new Vector2(8 * T, 12 * T),
-                ZoomLevel = 2.5f,
-                Exits = new List<ZoneExit>
-                {
-                    // Exit back down to path
-                    new ZoneExit { ZoneTile = new Point(8, 13), WorldTile = new Point(8, 14) },
-                }
+                ZoomLevel = 2.5f
             },
         };
     }
