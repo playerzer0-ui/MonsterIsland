@@ -12,7 +12,7 @@ namespace MonsterIsland
 
         Canvas canvas;
         Camera camera;
-        Sprite currentBackground;   // swaps between starter / sea / etc.
+        Sprite currentBackground;
         Player player;
         PathMap pathMap;
         WorldMapManager worldManager;
@@ -23,11 +23,14 @@ namespace MonsterIsland
         private const int TileW = 32;
         private const int TileH = 32;
 
+        private MouseState _prevMouse;
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            IsMouseVisible = false;
+            IsMouseVisible = true;
+            Mouse.SetCursor(MouseCursor.Crosshair);
         }
 
         protected override void Initialize()
@@ -50,17 +53,13 @@ namespace MonsterIsland
             canvas = new Canvas(_graphics.GraphicsDevice, 960, 640);
             canvas.SetDestinationRectangle();
 
-
             spriteFont = Content.Load<SpriteFont>("pico8");
 
-            // Starting map and background
             pathMap = new PathMap(PathTileset, TileW, TileH, "Maps/starter_path.csv", 8, 15);
             currentBackground = new Sprite("Maps/starter", new Vector2(480, 320));
 
-            // Transition manager
             transitionManager = new MapTransitionManager(pathMap, PathTileset, TileW, TileH);
 
-            // Exit: walking Up off col 25 row 0 on the starter map → sea map
             transitionManager.AddConnection(new MapConnection
             {
                 ExitDirection = Direction.Up,
@@ -80,10 +79,8 @@ namespace MonsterIsland
 
         private void OnMapChanged(PathMap newMap, string backgroundSprite)
         {
-            // Swap the visible background to match the new map
             currentBackground = new Sprite(backgroundSprite, new Vector2(480, 320));
 
-            // Re-register the reverse connection so the player can walk back
             bool arrivedOnSea = newMap.PlayerGridPosition == new Point(25, 19);
 
             transitionManager.AddConnection(arrivedOnSea
@@ -113,12 +110,21 @@ namespace MonsterIsland
                 || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            MouseState mouse = Mouse.GetState();
+            bool clicked = mouse.LeftButton == ButtonState.Pressed
+                            && _prevMouse.LeftButton == ButtonState.Released;
+
+            // One call — canvas handles letterbox offset + scale, camera handles pan + zoom.
+            Vector2 worldMouse = canvas.ScreenToWorld(camera.Transform());
+
             player.Update(gameTime);
-            worldManager.Update(gameTime);
+            worldManager.Update(gameTime, worldMouse, clicked);
 
             canvas.SetResolution(
                 _graphics.GraphicsDevice.Viewport.Width,
                 _graphics.GraphicsDevice.Viewport.Height);
+
+            _prevMouse = mouse;
             base.Update(gameTime);
         }
 
@@ -131,10 +137,9 @@ namespace MonsterIsland
             currentBackground.Draw(Color.White);
             player.Draw();
             _spriteBatch.DrawString(spriteFont, "hello y'all, are u all good?!", new Vector2(100, 100), Color.White);
+            worldManager.Draw();
 
             _spriteBatch.End();
-
-
             canvas.Draw(_spriteBatch);
             base.Draw(gameTime);
         }

@@ -1,15 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
 using System.Linq;
 
 namespace NodeTesting.models
 {
-    public enum WorldState { World, InZone }
-
     public class WorldMapManager
     {
         private PathMap _pathMap;
         private Camera _camera;
+        private ZoneArrowManager _arrowManager;
 
         private float _targetZoom = 1f;
         private Vector2 _targetCamPos = Vector2.Zero;
@@ -24,41 +22,43 @@ namespace NodeTesting.models
             _camera.Position = _targetCamPos;
             _camera.Zoom = 1f;
 
-            // Keep _pathMap in sync whenever the active map changes
+            _arrowManager = new ZoneArrowManager(transitionManager);
+
             transitionManager.OnMapChanged += (newMap, _) =>
             {
                 _pathMap = newMap;
-
-                // Reset zoom/camera so we don't carry over the previous map's zone state
                 _targetZoom = 1f;
                 _targetCamPos = new Vector2(480, 320);
             };
         }
 
-        public void Update(GameTime gt)
+        /// <summary>
+        /// worldMouse and clicked must be computed in Game1 where both the canvas
+        /// scale and camera transform are known. See Game1.ScreenToWorld().
+        /// </summary>
+        public void Update(GameTime gt, Vector2 worldMouse, bool clicked)
         {
             float dt = (float)gt.ElapsedGameTime.TotalSeconds;
 
             _camera.Zoom = MathHelper.Lerp(_camera.Zoom, _targetZoom, ZoomSpeed * dt);
             _camera.Position = Vector2.Lerp(_camera.Position, _targetCamPos, ZoomSpeed * dt);
 
-            if (_pathMap.IsMoving) return;
-
-            Point grid = _pathMap.PlayerGridPosition;
-
-            ZoneDefinition zone = ZoneRegistry.Zones
-                .FirstOrDefault(z => z.EntryTiles.Contains(grid));
-
-            if (zone != null)
+            if (!_pathMap.IsMoving)
             {
-                _targetZoom = zone.ZoomLevel;
-                _targetCamPos = zone.ZoomTarget;
+                Point grid = _pathMap.PlayerGridPosition;
+                ZoneDefinition zone = ZoneRegistry.Zones
+                    .FirstOrDefault(z => z.EntryTiles.Contains(grid));
+
+                _targetZoom = zone != null ? zone.ZoomLevel : 1f;
+                _targetCamPos = zone != null ? zone.ZoomTarget : new Vector2(480, 320);
             }
-            else
-            {
-                _targetZoom = 1f;
-                _targetCamPos = new Vector2(480, 320);
-            }
+
+            _arrowManager.Update(worldMouse, clicked);
+        }
+
+        public void Draw()
+        {
+            _arrowManager.Draw();
         }
     }
 }
