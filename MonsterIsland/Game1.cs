@@ -17,6 +17,7 @@ namespace MonsterIsland
         PathMap pathMap;
         WorldMapManager worldManager;
         MapTransitionManager transitionManager;
+        SpriteFont spriteFont;
 
         private const string PathTileset = "monster-island";
         private const int TileW = 32;
@@ -26,7 +27,7 @@ namespace MonsterIsland
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            IsMouseVisible = true;
+            IsMouseVisible = false;
         }
 
         protected override void Initialize()
@@ -48,6 +49,9 @@ namespace MonsterIsland
 
             canvas = new Canvas(_graphics.GraphicsDevice, 960, 640);
             canvas.SetDestinationRectangle();
+
+
+            spriteFont = Content.Load<SpriteFont>("pico8");
 
             // Starting map and background
             pathMap = new PathMap(PathTileset, TileW, TileH, "Maps/starter_path.csv", 8, 15);
@@ -126,8 +130,11 @@ namespace MonsterIsland
 
             currentBackground.Draw(Color.White);
             player.Draw();
+            _spriteBatch.DrawString(spriteFont, "hello y'all, are u all good?!", new Vector2(100, 100), Color.White);
 
             _spriteBatch.End();
+
+
             canvas.Draw(_spriteBatch);
             base.Draw(gameTime);
         }
