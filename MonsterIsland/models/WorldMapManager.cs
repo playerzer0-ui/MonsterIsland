@@ -10,9 +10,6 @@ namespace NodeTesting.models
     {
         private PathMap _pathMap;
         private Camera _camera;
-        private WorldState _state = WorldState.World;
-        private ZoneDefinition _currentZone;
-        private Point _entryTile;
 
         private float _targetZoom = 1f;
         private Vector2 _targetCamPos = Vector2.Zero;
@@ -33,8 +30,6 @@ namespace NodeTesting.models
                 _pathMap = newMap;
 
                 // Reset zoom/camera so we don't carry over the previous map's zone state
-                _state = WorldState.World;
-                _currentZone = null;
                 _targetZoom = 1f;
                 _targetCamPos = new Vector2(480, 320);
             };
