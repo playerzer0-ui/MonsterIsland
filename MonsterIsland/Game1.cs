@@ -14,7 +14,6 @@ namespace MonsterIsland
         Camera camera;
         Sprite starter;
         Player player;
-        TileMap path;
         PathMap pathMap;
         WorldMapManager worldManager;
 
@@ -51,7 +50,6 @@ namespace MonsterIsland
             camera = new Camera();
             starter = new Sprite("Maps/starter", new Vector2(480, 320));
             player = new Player("characters/player", 2, pathMap);
-            path = new TileMap("monster-island",32,32,"Maps/starter_path.csv");
             worldManager = new WorldMapManager(pathMap, camera);
         }
 
@@ -73,9 +71,7 @@ namespace MonsterIsland
             // TODO: Add your drawing code here
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: camera.Transform());
             starter.Draw(Color.White);
-            path.Draw();
-            player.Draw(0);
-            player.DrawRect();
+            player.Draw();
             _spriteBatch.End();
 
             canvas.Draw(_spriteBatch);

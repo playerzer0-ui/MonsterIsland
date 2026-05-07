@@ -15,6 +15,7 @@ namespace NodeTesting.models
         protected Rectangle[] Rectangles;
         protected int frames;
         protected int width;
+        protected int frameIndex = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpriteSheet"/> class.
@@ -41,7 +42,7 @@ namespace NodeTesting.models
         /// Draws the current frame of the sprite to the screen.
         /// </summary>
         /// <param name="spriteBatch">The <see cref="SpriteSheet"/> used for rendering.</param>
-        public void Draw(int frameIndex)
+        public void Draw()
         {
             Globals.spriteBatch.Draw(Texture, Position, Rectangles[frameIndex], Color, Rotation, Origin, Scale, SpriteEffect, 0f);
         }
