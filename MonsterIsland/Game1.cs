@@ -12,10 +12,15 @@ namespace MonsterIsland
 
         Canvas canvas;
         Camera camera;
-        Sprite starter;
+        Sprite currentBackground;   // swaps between starter / sea / etc.
         Player player;
         PathMap pathMap;
         WorldMapManager worldManager;
+        MapTransitionManager transitionManager;
+
+        private const string PathTileset = "monster-island";
+        private const int TileW = 32;
+        private const int TileH = 32;
 
         public Game1()
         {
@@ -26,7 +31,6 @@ namespace MonsterIsland
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
             _graphics.PreferredBackBufferWidth = 960;
             _graphics.PreferredBackBufferHeight = 640;
             Window.AllowUserResizing = true;
@@ -38,44 +42,93 @@ namespace MonsterIsland
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            // TODO: use this.Content to load your game content here
             Globals.Content = Content;
             Globals.spriteBatch = _spriteBatch;
             Globals.graphics = _graphics;
-            // TODO: use this.Content to load your game content here
+
             canvas = new Canvas(_graphics.GraphicsDevice, 960, 640);
             canvas.SetDestinationRectangle();
 
-            pathMap = new PathMap("monster-island", 32, 32, "Maps/starter_path.csv", 8, 15);
+            // Starting map and background
+            pathMap = new PathMap(PathTileset, TileW, TileH, "Maps/starter_path.csv", 8, 15);
+            currentBackground = new Sprite("Maps/starter", new Vector2(480, 320));
+
+            // Transition manager
+            transitionManager = new MapTransitionManager(pathMap, PathTileset, TileW, TileH);
+
+            // Exit: walking Up off col 25 row 0 on the starter map → sea map
+            transitionManager.AddConnection(new MapConnection
+            {
+                ExitDirection = Direction.Up,
+                ExitCoordinate = 25,
+                TargetMapCsv = "Maps/sea_path.csv",
+                TargetMapTexture = PathTileset,
+                LandingTile = new Point(25, 19),
+                BackgroundSprite = "Maps/sea"
+            });
+
+            transitionManager.OnMapChanged += OnMapChanged;
+
             camera = new Camera();
-            starter = new Sprite("Maps/starter", new Vector2(480, 320));
-            player = new Player("characters/player", 2, pathMap);
-            worldManager = new WorldMapManager(pathMap, camera);
+            player = new Player("characters/player", 2, transitionManager);
+            worldManager = new WorldMapManager(transitionManager, camera);
+        }
+
+        private void OnMapChanged(PathMap newMap, string backgroundSprite)
+        {
+            // Swap the visible background to match the new map
+            currentBackground = new Sprite(backgroundSprite, new Vector2(480, 320));
+
+            // Re-register the reverse connection so the player can walk back
+            bool arrivedOnSea = newMap.PlayerGridPosition == new Point(25, 19);
+
+            transitionManager.AddConnection(arrivedOnSea
+                ? new MapConnection
+                {
+                    ExitDirection = Direction.Down,
+                    ExitCoordinate = 25,
+                    TargetMapCsv = "Maps/starter_path.csv",
+                    TargetMapTexture = PathTileset,
+                    LandingTile = new Point(25, 0),
+                    BackgroundSprite = "Maps/starter"
+                }
+                : new MapConnection
+                {
+                    ExitDirection = Direction.Up,
+                    ExitCoordinate = 25,
+                    TargetMapCsv = "Maps/sea_path.csv",
+                    TargetMapTexture = PathTileset,
+                    LandingTile = new Point(25, 19),
+                    BackgroundSprite = "Maps/sea"
+                });
         }
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
+                || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
             player.Update(gameTime);
             worldManager.Update(gameTime);
-            // TODO: Add your update logic here
-            canvas.SetResolution(_graphics.GraphicsDevice.Viewport.Width, _graphics.GraphicsDevice.Viewport.Height);
+
+            canvas.SetResolution(
+                _graphics.GraphicsDevice.Viewport.Width,
+                _graphics.GraphicsDevice.Viewport.Height);
             base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
             canvas.Activate();
-            // TODO: Add your drawing code here
-            _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: camera.Transform());
-            starter.Draw(Color.White);
+            _spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+                               transformMatrix: camera.Transform());
+
+            currentBackground.Draw(Color.White);
             player.Draw();
+
             _spriteBatch.End();
-
             canvas.Draw(_spriteBatch);
-
             base.Draw(gameTime);
         }
     }

@@ -18,13 +18,26 @@ namespace NodeTesting.models
         private Vector2 _targetCamPos = Vector2.Zero;
         private const float ZoomSpeed = 3f;
 
-        public WorldMapManager(PathMap pathMap, Camera camera)
+        public WorldMapManager(MapTransitionManager transitionManager, Camera camera)
         {
-            _pathMap = pathMap;
             _camera = camera;
+            _pathMap = transitionManager.CurrentMap;
+
             _targetCamPos = new Vector2(480, 320);
             _camera.Position = _targetCamPos;
             _camera.Zoom = 1f;
+
+            // Keep _pathMap in sync whenever the active map changes
+            transitionManager.OnMapChanged += (newMap, _) =>
+            {
+                _pathMap = newMap;
+
+                // Reset zoom/camera so we don't carry over the previous map's zone state
+                _state = WorldState.World;
+                _currentZone = null;
+                _targetZoom = 1f;
+                _targetCamPos = new Vector2(480, 320);
+            };
         }
 
         public void Update(GameTime gt)
@@ -51,35 +64,6 @@ namespace NodeTesting.models
                 _targetZoom = 1f;
                 _targetCamPos = new Vector2(480, 320);
             }
-        }
-
-        private void EnterZone(ZoneDefinition zone, Point entryTile)
-        {
-            _currentZone = zone;
-            _entryTile = entryTile;
-            _state = WorldState.InZone;
-            _targetZoom = zone.ZoomLevel;
-            Console.WriteLine("ENTER");
-
-            // Center the camera on the zone's pixel center, accounting for zoom and viewport
-            Vector2 viewport = new Vector2(
-                Globals.graphics.GraphicsDevice.Viewport.Width,
-                Globals.graphics.GraphicsDevice.Viewport.Height
-            );
-            _targetCamPos = zone.ZoomTarget - (viewport / 2f) / _targetZoom;
-        }
-
-        private void ExitZone(ZoneExit exit)
-        {
-            _state = WorldState.World;
-            _currentZone = null;
-            Console.WriteLine("LEAVE");
-
-            // Reset zoom and camera position back to neutral
-            _targetZoom = 1f;
-            _targetCamPos = new Vector2(480, 320);
-
-            _pathMap.SetPlayerPosition(exit.WorldTile.X, exit.WorldTile.Y);
         }
     }
 }
