@@ -5,11 +5,17 @@ using System.Text.Json;
 
 namespace MonsterIsland.monsters
 {
+    public class FusionData
+    {
+        public List<int> RequiredMonsterIds { get; set; }
+        public int FusionLevel { get; set; }
+    }
+
     public class MonsterData
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public int Type { get; set; }
+        public List<int> Types { get; set; }
         public int BaseHealth { get; set; }
         public int BaseAttack { get; set; }
         public int BaseDefense { get; set; }
@@ -20,6 +26,11 @@ namespace MonsterIsland.monsters
         public int? EvolvesTo { get; set; }
         public int EvolutionLevel { get; set; }
         public int SheetIndex { get; set; }
+        public FusionData Fusion { get; set; }  // Null for non-fusion monsters
+
+        public int PrimaryType => Types != null && Types.Count > 0 ? Types[0] : 0;
+        public int? SecondaryType => Types != null && Types.Count > 1 ? Types[1] : (int?)null;
+        public bool IsFusion => Fusion != null;
     }
 
     public class MonstersJson
@@ -34,7 +45,11 @@ namespace MonsterIsland.monsters
         public static void LoadMonsters(string jsonPath)
         {
             string json = File.ReadAllText(jsonPath);
-            var monstersData = JsonSerializer.Deserialize<MonstersJson>(json);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var monstersData = JsonSerializer.Deserialize<MonstersJson>(json, options);
 
             _monsters = new Dictionary<int, MonsterData>();
             foreach (var data in monstersData.Monsters)
