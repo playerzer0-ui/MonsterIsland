@@ -46,5 +46,16 @@ namespace NodeTesting.models
         {
             Globals.spriteBatch.Draw(Texture, Position, Rectangles[frameIndex], Color, Rotation, Origin, Scale, SpriteEffect, 0f);
         }
+
+        /// <summary>
+        /// Draws a specific frame at a given world position.
+        /// Used by Monster so the shared sheet can be told which frame to draw
+        /// and where, without the sheet needing to store per-monster state.
+        /// </summary>
+        public void DrawFrame(int index, Vector2 position)
+        {
+            Globals.spriteBatch.Draw(Texture, position, Rectangles[index], Color.White,
+                0f, Origin, 1f, SpriteEffects.None, 0f);
+        }
     }
 }

@@ -28,7 +28,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content\Maps\" />
-    <Folder Include="monsters\" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Content\Maps\starter_collision.csv">

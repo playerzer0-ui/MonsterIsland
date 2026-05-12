@@ -1,0 +1,49 @@
+{
+  "monsters": [
+    {
+      "id": 1,
+      "name": "Kindlecko",
+      "type": 0,
+      "baseHealth": 40,
+      "baseAttack": 48,
+      "baseDefense": 38,
+      "baseMagic": 57,
+      "baseResistance": 43,
+      "baseSpeed": 62,
+      "moveIds": [ 1, 2 ],
+      "evolvesTo": 2,
+      "evolutionLevel": 16,
+      "sheetIndex": 0
+    },
+    {
+      "id": 2,
+      "name": "Blazards",
+      "type": 0,
+      "baseHealth": 60,
+      "baseAttack": 73,
+      "baseDefense": 58,
+      "baseMagic": 77,
+      "baseResistance": 63,
+      "baseSpeed": 77,
+      "moveIds": [ 1, 2, 6 ],
+      "evolvesTo": 3,
+      "evolutionLevel": 36,
+      "sheetIndex": 1
+    },
+    {
+      "id": 3,
+      "name": "Infernoclaw",
+      "type": 0,
+      "baseHealth": 80,
+      "baseAttack": 108,
+      "baseDefense": 78,
+      "baseMagic": 102,
+      "baseResistance": 78,
+      "baseSpeed": 92,
+      "moveIds": [ 3, 5, 10, 50 ],
+      "evolvesTo": null,
+      "evolutionLevel": 0,
+      "sheetIndex": 2
+    }
+  ]
+}
