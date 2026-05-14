@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 
 namespace MonsterIsland.monsters
 {
@@ -26,7 +26,7 @@ namespace MonsterIsland.monsters
         public int? EvolvesTo { get; set; }
         public int EvolutionLevel { get; set; }
         public int SheetIndex { get; set; }
-        public FusionData Fusion { get; set; }  // Null for non-fusion monsters
+        public FusionData Fusion { get; set; }
 
         public int PrimaryType => Types != null && Types.Count > 0 ? Types[0] : 0;
         public int? SecondaryType => Types != null && Types.Count > 1 ? Types[1] : (int?)null;
@@ -45,21 +45,23 @@ namespace MonsterIsland.monsters
         public static void LoadMonsters(string jsonPath)
         {
             string json = File.ReadAllText(jsonPath);
-            var options = new JsonSerializerOptions
+            var monstersData = JsonConvert.DeserializeObject<MonstersJson>(json);  // Newtonsoft — case-insensitive by default
+
+            if (monstersData?.Monsters == null)
             {
-                PropertyNameCaseInsensitive = true
-            };
-            var monstersData = JsonSerializer.Deserialize<MonstersJson>(json, options);
+                System.Console.WriteLine("[MonsterSpeciesDatabase] ERROR: monsters.json deserialized to null. Check the file path and JSON structure.");
+                return;
+            }
 
             _monsters = new Dictionary<int, MonsterData>();
-            foreach (var data in monstersData.Monsters)
-            {
+            foreach (MonsterData data in monstersData.Monsters)
                 _monsters[data.Id] = data;
-            }
+
+            System.Console.WriteLine($"[MonsterSpeciesDatabase] Loaded {_monsters.Count} monsters.");
         }
 
-        public static MonsterData GetMonster(int id) => _monsters.ContainsKey(id) ? _monsters[id] : null;
-        public static MonsterData GetMonster(string name) => _monsters.Values.FirstOrDefault(m => m.Name == name);
+        public static MonsterData GetMonster(int id) => _monsters != null && _monsters.ContainsKey(id) ? _monsters[id] : null;
+        public static MonsterData GetMonster(string name) => _monsters?.Values.FirstOrDefault(m => m.Name == name);
         public static Dictionary<int, MonsterData> GetAllMonsters() => _monsters;
     }
 }

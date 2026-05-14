@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 
 namespace MonsterIsland.monsters
 {
@@ -33,10 +33,16 @@ namespace MonsterIsland.monsters
         public static void LoadMoves(string jsonPath)
         {
             string json = File.ReadAllText(jsonPath);
-            var movesData = JsonSerializer.Deserialize<MovesJson>(json);
+            var movesData = JsonConvert.DeserializeObject<MovesJson>(json);  // Newtonsoft — case-insensitive by default
+
+            if (movesData?.Moves == null)
+            {
+                System.Console.WriteLine("[MoveDatabase] ERROR: moves.json deserialized to null. Check the file path and JSON structure.");
+                return;
+            }
 
             _moves = new Dictionary<int, Move>();
-            foreach (var data in movesData.Moves)
+            foreach (MoveData data in movesData.Moves)
             {
                 var move = new Move(data.Name, data.Type, data.Category, data.Power, data.Accuracy)
                 {
@@ -49,10 +55,12 @@ namespace MonsterIsland.monsters
                 };
                 _moves[data.Id] = move;
             }
+
+            System.Console.WriteLine($"[MoveDatabase] Loaded {_moves.Count} moves.");
         }
 
-        public static Move GetMove(int id) => _moves.ContainsKey(id) ? _moves[id] : null;
-        public static Move GetMove(string name) => _moves.Values.FirstOrDefault(m => m.Name == name);
+        public static Move GetMove(int id) => _moves != null && _moves.ContainsKey(id) ? _moves[id] : null;
+        public static Move GetMove(string name) => _moves?.Values.FirstOrDefault(m => m.Name == name);
         public static Dictionary<int, Move> GetAllMoves() => _moves;
     }
 }

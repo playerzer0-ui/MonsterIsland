@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 
 namespace NodeTesting.models
@@ -10,20 +11,23 @@ namespace NodeTesting.models
         private Vector2 playerWorldPos;
         private Vector2 targetWorldPos;
         private bool isMoving;
-        private float moveSpeed = 128f; // pixels per second
+        private float moveSpeed = 128f;
 
         public Point PlayerGridPosition => playerGridPos;
         public Vector2 PlayerWorldPosition => playerWorldPos;
         public bool IsMoving => isMoving;
 
+        /// <summary>
+        /// Fired once each time the player finishes moving to a new tile.
+        /// MonsterSpawner listens to this to check for encounters.
+        /// </summary>
+        public event Action<Point> OnTileLanded;
+
         public PathMap(string texturePath, int tileWidth, int tileHeight, string csvPath)
             : base(texturePath, tileWidth, tileHeight, csvPath)
         {
-            // Find first walkable tile as start position
             for (int row = 0; row < MapHeight; row++)
-            {
                 for (int col = 0; col < MapWidth; col++)
-                {
                     if (IsWalkable(col, row))
                     {
                         playerGridPos = new Point(col, row);
@@ -31,21 +35,16 @@ namespace NodeTesting.models
                         targetWorldPos = playerWorldPos;
                         return;
                     }
-                }
-            }
         }
 
         public PathMap(string texturePath, int tileWidth, int tileHeight, string csvPath, int startCol, int startRow)
-        : base(texturePath, tileWidth, tileHeight, csvPath)
+            : base(texturePath, tileWidth, tileHeight, csvPath)
         {
             playerGridPos = new Point(startCol, startRow);
             playerWorldPos = GetTileCenterWorld(startCol, startRow);
             targetWorldPos = playerWorldPos;
         }
 
-        /// <summary>
-        /// Checks if a grid position is walkable (not -1 and not out of bounds)
-        /// </summary>
         public bool IsWalkable(int gridX, int gridY)
         {
             if (gridX < 0 || gridX >= MapWidth || gridY < 0 || gridY >= MapHeight)
@@ -53,9 +52,6 @@ namespace NodeTesting.models
             return MapData[gridY, gridX] != -1;
         }
 
-        /// <summary>
-        /// Gets the world position of a tile's center
-        /// </summary>
         public Vector2 GetTileCenterWorld(int gridX, int gridY)
         {
             return new Vector2(
@@ -64,9 +60,6 @@ namespace NodeTesting.models
             );
         }
 
-        /// <summary>
-        /// Converts world position to grid coordinates
-        /// </summary>
         public Point WorldToGrid(Vector2 worldPos)
         {
             return new Point(
@@ -75,9 +68,6 @@ namespace NodeTesting.models
             );
         }
 
-        /// <summary>
-        /// Attempts to move the player in a direction
-        /// </summary>
         public bool TryMove(Direction dir)
         {
             if (isMoving) return false;
@@ -101,69 +91,54 @@ namespace NodeTesting.models
             return false;
         }
 
-        /// <summary>
-        /// Updates player movement (call in Game.Update)
-        /// </summary>
         public void Update(GameTime gameTime)
         {
             if (isMoving)
             {
                 float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-                Vector2 moveDir = targetWorldPos - playerWorldPos;
-                float dist = moveDir.Length();
+                Vector2 dir = targetWorldPos - playerWorldPos;
+                float dist = dir.Length();
                 float step = moveSpeed * dt;
-                if (dist <= step) { playerWorldPos = targetWorldPos; isMoving = false; }
-                else playerWorldPos += Vector2.Normalize(moveDir) * step;
 
-                if (Vector2.Distance(playerWorldPos, targetWorldPos) < 1f)
+                if (dist <= step)
                 {
                     playerWorldPos = targetWorldPos;
                     isMoving = false;
+                    OnTileLanded?.Invoke(playerGridPos);  // player has fully arrived — check for encounter
+                }
+                else
+                {
+                    playerWorldPos += Vector2.Normalize(dir) * step;
                 }
             }
         }
+
         public void SetPlayerPosition(int col, int row)
         {
             playerGridPos = new Point(col, row);
             playerWorldPos = GetTileCenterWorld(col, row);
             targetWorldPos = playerWorldPos;
             isMoving = false;
+            // No OnTileLanded here — teleports (zone arrows, map transitions)
+            // shouldn't trigger random encounters.
         }
 
-        /// <summary>
-        /// Draws the map and player
-        /// </summary>
         public void DrawPlayer(Sprite playerSprite)
         {
             playerSprite.Pos = playerWorldPos;
             playerSprite.Draw(Color.White);
         }
 
-        /// <summary>
-        /// Debug: Draw walkable tiles highlight
-        /// </summary>
         public void DrawWalkableDebug(Texture2D pixelTexture)
         {
             for (int y = 0; y < MapHeight; y++)
-            {
                 for (int x = 0; x < MapWidth; x++)
-                {
                     if (IsWalkable(x, y))
-                    {
                         Globals.spriteBatch.Draw(pixelTexture,
                             new Rectangle(x * TileWidth, y * TileHeight, TileWidth, TileHeight),
                             Color.Green * 0.3f);
-                    }
-                }
-            }
         }
     }
 
-    public enum Direction
-    {
-        Up,
-        Down,
-        Left,
-        Right
-    }
+    public enum Direction { Up, Down, Left, Right }
 }

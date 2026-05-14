@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonsterIsland.monsters;
 using NodeTesting.models;
+using System;
 
 namespace MonsterIsland
 {
@@ -17,6 +19,8 @@ namespace MonsterIsland
         PathMap pathMap;
         WorldMapManager worldManager;
         MapTransitionManager transitionManager;
+        BattleManager battleManager;
+        MonsterSpawner spawner;
         SpriteFont spriteFont;
 
         private const string PathTileset = "monster-island";
@@ -45,7 +49,6 @@ namespace MonsterIsland
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-
             Globals.Content = Content;
             Globals.spriteBatch = _spriteBatch;
             Globals.graphics = _graphics;
@@ -55,9 +58,21 @@ namespace MonsterIsland
 
             spriteFont = Content.Load<SpriteFont>("pico8");
 
+            Monster.LoadContent("Content/moves.json", "Content/monsters.json");
+
+            // --- Maps ---
             pathMap = new PathMap(PathTileset, TileW, TileH, "Maps/starter_path.csv", 8, 15);
             currentBackground = new Sprite("Maps/starter", new Vector2(480, 320));
 
+            // --- Encounters ---
+            // Each map gets its own EncounterMap loaded from its own CSV.
+            spawner = new MonsterSpawner(new EncounterMap("Maps/starter_encounter.csv"));
+
+            // When the player finishes walking to a tile, ask the spawner
+            // whether a battle should start.
+            HookSpawnerToMap(pathMap);
+
+            // --- Transitions ---
             transitionManager = new MapTransitionManager(pathMap, PathTileset, TileW, TileH);
 
             transitionManager.AddConnection(new MapConnection
@@ -72,9 +87,29 @@ namespace MonsterIsland
 
             transitionManager.OnMapChanged += OnMapChanged;
 
+            // --- Everything else ---
             camera = new Camera();
             player = new Player("characters/player", 2, transitionManager);
             worldManager = new WorldMapManager(transitionManager, camera);
+            battleManager = new BattleManager();
+        }
+
+        /// <summary>
+        /// Subscribes the spawner to a PathMap's OnTileLanded event.
+        /// Called once for the initial map, then again every time we transition
+        /// to a new map so the new map is also covered.
+        /// </summary>
+        private void HookSpawnerToMap(PathMap map)
+        {
+            map.OnTileLanded += tile =>
+            {
+                var wildMonsters = spawner.TrySpawnEncounter(tile);
+                if (wildMonsters != null)
+                {
+                    Console.WriteLine("OH NO THERE IS A BATTLE");
+                }
+                    
+            };
         }
 
         private void OnMapChanged(PathMap newMap, string backgroundSprite)
@@ -82,6 +117,14 @@ namespace MonsterIsland
             currentBackground = new Sprite(backgroundSprite, new Vector2(480, 320));
 
             bool arrivedOnSea = newMap.PlayerGridPosition == new Point(25, 19);
+
+            // Swap the encounter map to match the new area
+            spawner = new MonsterSpawner(new EncounterMap(
+                arrivedOnSea ? "Maps/sea_encounter.csv" : "Maps/starter_encounter.csv"
+            ));
+
+            // Hook the spawner to the new PathMap
+            HookSpawnerToMap(newMap);
 
             transitionManager.AddConnection(arrivedOnSea
                 ? new MapConnection
@@ -113,8 +156,6 @@ namespace MonsterIsland
             MouseState mouse = Mouse.GetState();
             bool clicked = mouse.LeftButton == ButtonState.Pressed
                             && _prevMouse.LeftButton == ButtonState.Released;
-
-            // One call — canvas handles letterbox offset + scale, camera handles pan + zoom.
             Vector2 worldMouse = canvas.ScreenToWorld(camera.Transform());
 
             player.Update(gameTime);
@@ -136,7 +177,6 @@ namespace MonsterIsland
 
             currentBackground.Draw(Color.White);
             player.Draw();
-            _spriteBatch.DrawString(spriteFont, "hello y'all, are u all good?!", new Vector2(100, 100), Color.White);
             worldManager.Draw();
 
             _spriteBatch.End();
