@@ -22,6 +22,7 @@ namespace MonsterIsland
         BattleManager battleManager;
         MonsterSpawner spawner;
         SpriteFont spriteFont;
+        Healthbar healthbar;
 
         private const string PathTileset = "monster-island";
         private const int TileW = 32;
@@ -55,6 +56,8 @@ namespace MonsterIsland
 
             canvas = new Canvas(_graphics.GraphicsDevice, 960, 640);
             canvas.SetDestinationRectangle();
+
+            healthbar = new Healthbar(new Vector2(300, 300), 100);
 
             spriteFont = Content.Load<SpriteFont>("pico8");
 
@@ -178,6 +181,7 @@ namespace MonsterIsland
             currentBackground.Draw(Color.White);
             player.Draw();
             worldManager.Draw();
+            healthbar.Draw(4f);
 
             _spriteBatch.End();
             canvas.Draw(_spriteBatch);
