@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonsterIsland.monsters;
 using NodeTesting.models;
-using System;
+using System.Collections.Generic;
 
 namespace MonsterIsland
 {
@@ -22,7 +22,6 @@ namespace MonsterIsland
         BattleManager battleManager;
         MonsterSpawner spawner;
         SpriteFont spriteFont;
-        Healthbar healthbar;
 
         private const string PathTileset = "monster-island";
         private const int TileW = 32;
@@ -57,27 +56,17 @@ namespace MonsterIsland
             canvas = new Canvas(_graphics.GraphicsDevice, 960, 640);
             canvas.SetDestinationRectangle();
 
-            healthbar = new Healthbar(new Vector2(300, 300), 100);
-
             spriteFont = Content.Load<SpriteFont>("pico8");
 
             Monster.LoadContent("Content/moves.json", "Content/monsters.json");
 
-            // --- Maps ---
             pathMap = new PathMap(PathTileset, TileW, TileH, "Maps/starter_path.csv", 8, 15);
             currentBackground = new Sprite("Maps/starter", new Vector2(480, 320));
 
-            // --- Encounters ---
-            // Each map gets its own EncounterMap loaded from its own CSV.
             spawner = new MonsterSpawner(new EncounterMap("Maps/starter_encounter.csv"));
-
-            // When the player finishes walking to a tile, ask the spawner
-            // whether a battle should start.
             HookSpawnerToMap(pathMap);
 
-            // --- Transitions ---
             transitionManager = new MapTransitionManager(pathMap, PathTileset, TileW, TileH);
-
             transitionManager.AddConnection(new MapConnection
             {
                 ExitDirection = Direction.Up,
@@ -87,46 +76,39 @@ namespace MonsterIsland
                 LandingTile = new Point(25, 19),
                 BackgroundSprite = "Maps/sea"
             });
-
             transitionManager.OnMapChanged += OnMapChanged;
 
-            // --- Everything else ---
             camera = new Camera();
             player = new Player("characters/player", 2, transitionManager);
             worldManager = new WorldMapManager(transitionManager, camera);
-            battleManager = new BattleManager();
+            battleManager = new BattleManager(spriteFont);
         }
 
-        /// <summary>
-        /// Subscribes the spawner to a PathMap's OnTileLanded event.
-        /// Called once for the initial map, then again every time we transition
-        /// to a new map so the new map is also covered.
-        /// </summary>
         private void HookSpawnerToMap(PathMap map)
         {
             map.OnTileLanded += tile =>
             {
-                var wildMonsters = spawner.TrySpawnEncounter(tile);
-                if (wildMonsters != null)
+                var wild = spawner.TrySpawnEncounter(tile);
+                if (wild != null)
                 {
-                    Console.WriteLine("OH NO THERE IS A BATTLE");
+                    // Create a proper player party! You need to store your actual party somewhere
+                    var playerParty = new List<Monster>();
+                    for (int i = 0; i < 3; i++)
+                    {
+                        playerParty.Add(new Monster(1, 5)); // 3 Kindlecko level 5
+                    }
+                    battleManager.StartBattle(playerParty, wild);
                 }
-                    
             };
         }
 
         private void OnMapChanged(PathMap newMap, string backgroundSprite)
         {
             currentBackground = new Sprite(backgroundSprite, new Vector2(480, 320));
-
             bool arrivedOnSea = newMap.PlayerGridPosition == new Point(25, 19);
 
-            // Swap the encounter map to match the new area
             spawner = new MonsterSpawner(new EncounterMap(
-                arrivedOnSea ? "Maps/sea_encounter.csv" : "Maps/starter_encounter.csv"
-            ));
-
-            // Hook the spawner to the new PathMap
+                arrivedOnSea ? "Maps/sea_encounter.csv" : "Maps/starter_encounter.csv"));
             HookSpawnerToMap(newMap);
 
             transitionManager.AddConnection(arrivedOnSea
@@ -158,11 +140,18 @@ namespace MonsterIsland
 
             MouseState mouse = Mouse.GetState();
             bool clicked = mouse.LeftButton == ButtonState.Pressed
-                            && _prevMouse.LeftButton == ButtonState.Released;
+                              && _prevMouse.LeftButton == ButtonState.Released;
             Vector2 worldMouse = canvas.ScreenToWorld(camera.Transform());
 
-            player.Update(gameTime);
-            worldManager.Update(gameTime, worldMouse, clicked);
+            // Only update world when the battle scene itself isn't visible.
+            // During SwipingIn the world still updates (player is frozen but world ticks).
+            if (!battleManager.IsBattleVisible)
+            {
+                player.Update(gameTime);
+                worldManager.Update(gameTime, worldMouse, clicked);
+            }
+
+            battleManager.Update(gameTime);
 
             canvas.SetResolution(
                 _graphics.GraphicsDevice.Viewport.Width,
@@ -175,15 +164,31 @@ namespace MonsterIsland
         protected override void Draw(GameTime gameTime)
         {
             canvas.Activate();
+
+            // ── World pass (camera transform) ─────────────────────────────
+            // Always draw the world. During SwipingIn it shows behind the panel.
+            // Once the panel covers the screen (Battle state), battle.Draw() takes over.
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp,
                                transformMatrix: camera.Transform());
 
-            currentBackground.Draw(Color.White);
-            player.Draw();
-            worldManager.Draw();
-            healthbar.Draw(4f);
+            if (!battleManager.IsBattleVisible)
+            {
+                currentBackground.Draw(Color.White);
+                player.Draw();
+                worldManager.Draw();
+            }
 
             _spriteBatch.End();
+
+            // ── UI / overlay pass (no camera transform) ───────────────────
+            // Battle scene and transition panel live here — they are always
+            // in canvas space (0-960, 0-640) regardless of camera zoom or pan.
+            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+            battleManager.Draw();   // draws battle scene + transition panel on top
+
+            _spriteBatch.End();
+
             canvas.Draw(_spriteBatch);
             base.Draw(gameTime);
         }

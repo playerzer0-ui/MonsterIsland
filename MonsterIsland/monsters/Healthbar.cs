@@ -17,8 +17,8 @@ namespace MonsterIsland.monsters
 
         // The full pixel width of the fill area inside the border.
         // Set this to match the inner width of your healthbar-bg sprite.
-        private readonly int _baseFillWidth;
-        private readonly int _baseFillHeight;
+        private int _baseFillWidth;
+        private int _baseFillHeight;
 
         public Healthbar(Vector2 position, int maxHealth, float scale = 1f)
         {
@@ -35,6 +35,9 @@ namespace MonsterIsland.monsters
             _baseFillWidth = _fillTexture.Width;
             _baseFillHeight = _fillTexture.Height;
         }
+
+        public int GetBaseFillWidth() => _baseFillWidth;
+        public int GetBaseFillHeight() => _baseFillHeight;
 
         public void Update(int currentHealth, int maxHealth)
         {
