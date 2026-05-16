@@ -9,7 +9,7 @@ using MonsterIsland.monsters;
 
 namespace MonsterIsland
 {
-    public enum BattleState { Inactive, SwipingIn, Battle, SwipingOut }
+    public enum BattleState { Inactive, SwipingIn, Battle }
 
     public class BattleManager
     {
@@ -37,8 +37,8 @@ namespace MonsterIsland
         };
 
         // ── Slide-in animation ────────────────────────────────────────────
-        private const float SlideDuration = 0.4f;      // How long each monster takes to slide
-        private const float SlideStagger = 0.12f;      // Delay between each monster
+        private const float SlideDuration = 0.4f;
+        private const float SlideStagger = 0.12f;
         private const float OffscreenTop = -120f;
         private const float OffscreenBot = 720f;
 
@@ -46,12 +46,14 @@ namespace MonsterIsland
         private Vector2[] _playerDrawPos;
         private float[] _wildTimer;
         private float[] _playerTimer;
-        private bool _animationsStarted = false;
+        private bool _monstersSliding = false;
+        private bool _battleSceneBuilt = false;  // Track if battle scene is built
 
         // ── State exposed to Game1 ────────────────────────────────────────
         public bool IsBattleVisible => _state == BattleState.Battle;
         public bool IsSwipingIn => _state == BattleState.SwipingIn;
         public bool IsActive => _state != BattleState.Inactive;
+        public bool HasBattleScene => _battleSceneBuilt;  // Does battle scene exist?
 
         public BattleManager(SpriteFont font)
         {
@@ -77,23 +79,32 @@ namespace MonsterIsland
         {
             if (_state != BattleState.Inactive) return;
 
-            Console.WriteLine($"[BattleManager] Starting battle - Player count: {playerParty.Count}, Wild count: {wildMonsters.Count}");
+            Console.WriteLine($"[BattleManager] Starting battle");
 
             _playerMonsters = playerParty.Take(3).ToList();
             _wildMonsters = wildMonsters.Take(3).ToList();
             _bgIndex = MathHelper.Clamp(backgroundIndex, 0, _backgrounds.Length - 1);
+            _monstersSliding = false;
+            _battleSceneBuilt = false;
 
-            _animationsStarted = false;
             _state = BattleState.SwipingIn;
 
-            _transition.OnCovered = BuildBattleScene;
-            _transition.OnComplete = StartMonsterAnimations;  // KEY: Start animations AFTER screen is completely gone
+            // Setup transition callbacks
+            _transition.OnCovered = () => {
+                Console.WriteLine("[BattleManager] Screen covered - building battle scene silently");
+                BuildBattleScene();
+            };
+            _transition.OnComplete = () => {
+                Console.WriteLine("[BattleManager] Transition complete! Starting monster slide-in");
+                _monstersSliding = true;
+                _state = BattleState.Battle;
+            };
             _transition.Start("Wild Encounter!");
         }
 
         private void BuildBattleScene()
         {
-            Console.WriteLine("[BattleManager] Building battle scene (screen is black)");
+            Console.WriteLine("[BattleManager] Building battle scene (hidden behind transition)");
 
             _playerHealthbars = new List<Healthbar>();
             _wildHealthbars = new List<Healthbar>();
@@ -115,42 +126,21 @@ namespace MonsterIsland
             _wildTimer = new float[_wildMonsters.Count];
             _playerTimer = new float[_playerMonsters.Count];
 
-            // Set initial offscreen positions (but don't start timers yet!)
+            // Set initial offscreen positions
             for (int i = 0; i < _wildMonsters.Count; i++)
             {
                 _wildDrawPos[i] = new Vector2(_wildPositions[i].X, OffscreenTop);
-                _wildTimer[i] = 0;  // Will be set when animations actually start
+                _wildTimer[i] = -(i * SlideStagger);
             }
 
             for (int i = 0; i < _playerMonsters.Count; i++)
             {
                 _playerDrawPos[i] = new Vector2(_playerPositions[i].X, OffscreenBot);
-                _playerTimer[i] = 0;  // Will be set when animations actually start
+                _playerTimer[i] = -(i * SlideStagger);
             }
 
-            // Don't switch to Battle state yet - stay in SwipingIn until transition completes
-            // _state will stay BattleState.SwipingIn until OnComplete fires
-        }
-
-        private void StartMonsterAnimations()
-        {
-            Console.WriteLine("[BattleManager] Screen fully uncovered! Starting monster slide-in animations NOW");
-
-            // Now set the timers with stagger so they enter left-to-right
-            for (int i = 0; i < _wildMonsters.Count; i++)
-            {
-                _wildTimer[i] = -(i * SlideStagger);  // Negative = delay before starting
-                Console.WriteLine($"[BattleManager] Wild {i} will start in {Math.Abs(_wildTimer[i]):F2}s");
-            }
-
-            for (int i = 0; i < _playerMonsters.Count; i++)
-            {
-                _playerTimer[i] = -(i * SlideStagger);  // Negative = delay before starting
-                Console.WriteLine($"[BattleManager] Player {i} will start in {Math.Abs(_playerTimer[i]):F2}s");
-            }
-
-            _animationsStarted = true;
-            _state = BattleState.Battle;  // Now switch to Battle state so drawing happens
+            _battleSceneBuilt = true;
+            Console.WriteLine("[BattleManager] Battle scene built and ready behind transition");
         }
 
         public void Update(GameTime gameTime)
@@ -162,72 +152,65 @@ namespace MonsterIsland
             // Always tick the transition
             _transition.Update(gameTime);
 
-            // Only animate if we're in Battle state AND animations have started
-            if (_state == BattleState.Battle && _animationsStarted)
+            // Update monster slide-in animations
+            if (_monstersSliding)
             {
-                bool anyAnimating = false;
+                bool allDone = true;
 
-                // Update wild monster animations
+                // Update wild monsters
                 for (int i = 0; i < _wildMonsters.Count; i++)
                 {
-                    if (_wildTimer[i] < SlideDuration)  // Still animating or waiting to start
+                    if (_wildTimer[i] < SlideDuration)
                     {
-                        anyAnimating = true;
+                        allDone = false;
                         _wildTimer[i] += dt;
 
-                        if (_wildTimer[i] >= 0)  // Only move once timer reaches 0 or positive
+                        if (_wildTimer[i] >= 0)
                         {
                             float t = Math.Min(_wildTimer[i] / SlideDuration, 1f);
                             float newY = MathHelper.Lerp(OffscreenTop, _wildPositions[i].Y, EaseOut(t));
                             _wildDrawPos[i] = new Vector2(_wildPositions[i].X, newY);
-
-                            if (t < 1f && _wildTimer[i] < SlideDuration)
-                                Console.WriteLine($"[BattleManager] Wild {i} sliding: Y={newY:F1}, progress={t:F2}");
                         }
                     }
                 }
 
-                // Update player monster animations
+                // Update player monsters
                 for (int i = 0; i < _playerMonsters.Count; i++)
                 {
-                    if (_playerTimer[i] < SlideDuration)  // Still animating or waiting to start
+                    if (_playerTimer[i] < SlideDuration)
                     {
-                        anyAnimating = true;
+                        allDone = false;
                         _playerTimer[i] += dt;
 
-                        if (_playerTimer[i] >= 0)  // Only move once timer reaches 0 or positive
+                        if (_playerTimer[i] >= 0)
                         {
                             float t = Math.Min(_playerTimer[i] / SlideDuration, 1f);
                             float newY = MathHelper.Lerp(OffscreenBot, _playerPositions[i].Y, EaseOut(t));
                             _playerDrawPos[i] = new Vector2(_playerPositions[i].X, newY);
-
-                            if (t < 1f && _playerTimer[i] < SlideDuration)
-                                Console.WriteLine($"[BattleManager] Player {i} sliding: Y={newY:F1}, progress={t:F2}");
                         }
                     }
                 }
 
-                if (!anyAnimating)
+                if (allDone)
                 {
-                    Console.WriteLine("[BattleManager] All monsters have finished sliding in!");
+                    Console.WriteLine("[BattleManager] All monsters finished sliding!");
                 }
 
                 // Quick exit with B button for testing
-                KeyboardState keyboardState = Keyboard.GetState();
-                if (keyboardState.IsKeyDown(Keys.B))
+                if (Keyboard.GetState().IsKeyDown(Keys.B))
                 {
                     Console.WriteLine("[BattleManager] Exiting battle with B button");
                     _state = BattleState.Inactive;
-                    _animationsStarted = false;
+                    _monstersSliding = false;
+                    _battleSceneBuilt = false;
                 }
             }
         }
 
-        public void Draw()
+        // Draw just the battle scene (no transition)
+        public void DrawBattleScene()
         {
-            // Don't draw ANY battle content while swiping in/out - only after transition is complete
-            if (_state != BattleState.Battle) return;
-            if (!_animationsStarted) return;
+            if (!_battleSceneBuilt) return;
 
             _backgrounds[_bgIndex].Draw(Color.White);
             _actionBar.Draw(Color.White);
@@ -241,7 +224,7 @@ namespace MonsterIsland
                 _wildMonsters[i].Position = _wildDrawPos[i];
                 _wildMonsters[i].Draw();
 
-                // Only show UI if monster has finished animating (timer >= SlideDuration)
+                // Only show UI after monster finished animating
                 if (_wildTimer[i] >= SlideDuration)
                 {
                     DrawCentredString(_wildMonsters[i].Name, new Vector2(cx, cy - 50), Color.White, 0.5f);
@@ -261,7 +244,7 @@ namespace MonsterIsland
                 _playerMonsters[i].Position = _playerDrawPos[i];
                 _playerMonsters[i].Draw();
 
-                // Only show UI if monster has finished animating (timer >= SlideDuration)
+                // Only show UI after monster finished animating
                 if (_playerTimer[i] >= SlideDuration)
                 {
                     _playerHealthbars[i].Update(_playerMonsters[i].Health, _playerMonsters[i].MaxHealth);
@@ -271,8 +254,11 @@ namespace MonsterIsland
                     DrawCentredString(_playerMonsters[i].Name, new Vector2(cx, cy - 10), Color.White, 0.5f);
                 }
             }
+        }
 
-            // Transition panel draws last
+        // Draw just the transition overlay
+        public void DrawTransition()
+        {
             _transition.Draw();
         }
 

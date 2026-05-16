@@ -166,12 +166,11 @@ namespace MonsterIsland
             canvas.Activate();
 
             // ── World pass (camera transform) ─────────────────────────────
-            // Always draw the world. During SwipingIn it shows behind the panel.
-            // Once the panel covers the screen (Battle state), battle.Draw() takes over.
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp,
                                transformMatrix: camera.Transform());
 
-            if (!battleManager.IsBattleVisible)
+            // Only draw world if battle hasn't taken over yet
+            if (!battleManager.HasBattleScene)
             {
                 currentBackground.Draw(Color.White);
                 player.Draw();
@@ -180,12 +179,15 @@ namespace MonsterIsland
 
             _spriteBatch.End();
 
-            // ── UI / overlay pass (no camera transform) ───────────────────
-            // Battle scene and transition panel live here — they are always
-            // in canvas space (0-960, 0-640) regardless of camera zoom or pan.
+            // ── Battle Scene (no camera transform) ────────────────────────
+            // Draw battle scene here, but it will be covered by transition
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
-            battleManager.Draw();   // draws battle scene + transition panel on top
+            // Draw battle scene if it exists (it will be hidden behind transition)
+            battleManager.DrawBattleScene();
+
+            // Draw transition ON TOP of everything (including battle scene)
+            battleManager.DrawTransition();
 
             _spriteBatch.End();
 
