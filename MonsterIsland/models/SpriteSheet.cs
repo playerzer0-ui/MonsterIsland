@@ -17,14 +17,12 @@ namespace NodeTesting.models
         protected int width;
         protected int frameIndex = 0;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SpriteSheet"/> class.
-        /// </summary>
-        /// <param name="Texture">The path to the texture in the Content folder.</param>
-        /// <param name="frames">The total number of frames in the texture.</param>
-        /// <remarks>
-        /// This constructor automatically divides the texture width evenly based on the specified frame count.
-        /// </remarks>
+        /// <summary>Width of a single frame in pixels.</summary>
+        public int FrameWidth => width;
+
+        /// <summary>Height of the sheet (same for every frame).</summary>
+        public int FrameHeight => Texture.Height;
+
         public SpriteSheet(string Texture, int frames)
         {
             this.frames = frames;
@@ -38,24 +36,55 @@ namespace NodeTesting.models
             Origin = new Vector2(width / 2, this.Texture.Height / 2);
         }
 
-        /// <summary>
-        /// Draws the current frame of the sprite to the screen.
-        /// </summary>
-        /// <param name="spriteBatch">The <see cref="SpriteSheet"/> used for rendering.</param>
         public void Draw()
         {
-            Globals.spriteBatch.Draw(Texture, Position, Rectangles[frameIndex], Color, Rotation, Origin, Scale, SpriteEffect, 0f);
+            Globals.spriteBatch.Draw(Texture, Position, Rectangles[frameIndex], Color,
+                Rotation, Origin, Scale, SpriteEffect, 0f);
         }
 
-        /// <summary>
-        /// Draws a specific frame at a given world position.
-        /// Used by Monster so the shared sheet can be told which frame to draw
-        /// and where, without the sheet needing to store per-monster state.
-        /// </summary>
         public void DrawFrame(int index, Vector2 position)
         {
             Globals.spriteBatch.Draw(Texture, position, Rectangles[index], Color.White,
                 0f, Origin, 1f, SpriteEffects.None, 0f);
+        }
+
+        /// <summary>
+        /// Draw a specific frame with custom scale.
+        /// </summary>
+        /// <param name="index">Frame index to draw (0-based).</param>
+        /// <param name="position">Position to draw at (center of the frame).</param>
+        /// <param name="scale">Scale factor (1.0 = original size).</param>
+        public void DrawFrame(int index, Vector2 position, float scale)
+        {
+            Globals.spriteBatch.Draw(Texture, position, Rectangles[index], Color.White,
+                0f, Origin, scale, SpriteEffects.None, 0f);
+        }
+
+        /// <summary>
+        /// Draw a specific frame with custom scale and color.
+        /// </summary>
+        /// <param name="index">Frame index to draw (0-based).</param>
+        /// <param name="position">Position to draw at (center of the frame).</param>
+        /// <param name="scale">Scale factor (1.0 = original size).</param>
+        /// <param name="color">Color tint to apply.</param>
+        public void DrawFrame(int index, Vector2 position, float scale, Color color)
+        {
+            Globals.spriteBatch.Draw(Texture, position, Rectangles[index], color,
+                0f, Origin, scale, SpriteEffects.None, 0f);
+        }
+
+        /// <summary>
+        /// Draw a specific frame with full control over parameters.
+        /// </summary>
+        /// <param name="index">Frame index to draw (0-based).</param>
+        /// <param name="position">Position to draw at.</param>
+        /// <param name="rotation">Rotation in radians.</param>
+        /// <param name="scale">Scale factor.</param>
+        /// <param name="effects">Sprite effects (flip horizontally/vertically).</param>
+        public void DrawFrame(int index, Vector2 position, float rotation, float scale, SpriteEffects effects = SpriteEffects.None)
+        {
+            Globals.spriteBatch.Draw(Texture, position, Rectangles[index], Color.White,
+                rotation, Origin, scale, effects, 0f);
         }
     }
 }

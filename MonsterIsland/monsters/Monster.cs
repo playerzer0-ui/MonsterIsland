@@ -81,6 +81,7 @@ namespace MonsterIsland.monsters
             _sheet = new SpriteSheet("monsters-Sheet", 124);   // monsters-Sheet.png
             MoveDatabase.LoadMoves(movesJsonPath);
             MonsterSpeciesDatabase.LoadMonsters(monstersJsonPath);
+            TypeSymbol.LoadContent();                           // symbol-Sheet.png
         }
 
         public Monster EvolveTo()

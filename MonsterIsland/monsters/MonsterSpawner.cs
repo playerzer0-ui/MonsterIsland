@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace MonsterIsland.monsters
 {
@@ -13,7 +14,7 @@ namespace MonsterIsland.monsters
             _encounterMap = encounterMap;
         }
 
-        public List<Monster> TrySpawnEncounter(Microsoft.Xna.Framework.Point gridTile)
+        public List<Monster> TrySpawnEncounter(Point gridTile)
         {
             int zoneId = _encounterMap.GetZoneId(gridTile);
 
