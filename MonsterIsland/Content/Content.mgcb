@@ -337,6 +337,18 @@
 /processorParam:TextureFormat=Color
 /build:moves/gale-move.png
 
+#begin moves/movetype.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:moves/movetype.png
+
 #begin moves/prismatic-move.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -392,6 +404,18 @@
 /processorParam:TextureFormat=Compressed
 /build:pico8.spritefont
 
+#begin rounded-rectangle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:rounded-rectangle.png
+
 #begin symbols-Sheet.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -403,4 +427,16 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:symbols-Sheet.png
+
+#begin UI-Sheet.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:UI-Sheet.png
 

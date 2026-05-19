@@ -81,7 +81,7 @@ namespace MonsterIsland
                 new Sprite("background/stronghold", new Vector2(480, 240))
             };
             _actionBar = new Sprite("background/actionbar", new Vector2(480, 560));
-
+            
             // Set default text colors
             SetTextColorsForBackground(0);
         }
@@ -98,7 +98,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.Black
                     };
                     break;
-
+                    
                 case 1: // plains2 - bright field
                     _currentTextColors = new TextColors
                     {
@@ -107,7 +107,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.Black
                     };
                     break;
-
+                    
                 case 2: // beach - bright sand
                     _currentTextColors = new TextColors
                     {
@@ -116,7 +116,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.Black
                     };
                     break;
-
+                    
                 case 3: // forest - medium dark
                     _currentTextColors = new TextColors
                     {
@@ -125,7 +125,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.White
                     };
                     break;
-
+                    
                 case 4: // sea - bright blue water
                     _currentTextColors = new TextColors
                     {
@@ -134,7 +134,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.Black
                     };
                     break;
-
+                    
                 case 5: // deepsea - dark blue
                     _currentTextColors = new TextColors
                     {
@@ -143,7 +143,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.White
                     };
                     break;
-
+                    
                 case 6: // deepest - very dark
                     _currentTextColors = new TextColors
                     {
@@ -152,7 +152,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.White
                     };
                     break;
-
+                    
                 case 7: // cave - dark
                     _currentTextColors = new TextColors
                     {
@@ -161,7 +161,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.White
                     };
                     break;
-
+                    
                 case 8: // stronghold - dark stone
                     _currentTextColors = new TextColors
                     {
@@ -170,7 +170,7 @@ namespace MonsterIsland
                         HealthTextColor = Color.White
                     };
                     break;
-
+                    
                 default:
                     _currentTextColors = new TextColors
                     {
@@ -191,10 +191,10 @@ namespace MonsterIsland
             _playerMonsters = playerParty.Take(3).ToList();
             _wildMonsters = wildMonsters.Take(3).ToList();
             _bgIndex = MathHelper.Clamp(backgroundIndex, 0, _backgrounds.Length - 1);
-
+            
             // Set colors based on the background
             SetTextColorsForBackground(_bgIndex);
-
+            
             _monstersSliding = false;
             _battleSceneBuilt = false;
 
@@ -392,33 +392,6 @@ namespace MonsterIsland
             Globals.spriteBatch.DrawString(_font, lvText,
                 new Vector2(cursorX, midY - textSize.Y / 2f),
                 levelColor, 0f, Vector2.Zero, textScale, SpriteEffects.None, 0f);
-        }
-
-        /// <summary>
-        /// Optionally, you can add outline to text for better visibility on all backgrounds.
-        /// </summary>
-        private void DrawCentredStringWithOutline(string text, Vector2 centre, Color color, Color outlineColor, float scale = 1f)
-        {
-            Vector2 size = _font.MeasureString(text) * scale;
-            Vector2 topLeft = new Vector2(centre.X - size.X / 2f, centre.Y - size.Y / 2f);
-
-            // Draw outline (8 directions)
-            Vector2[] offsets = new Vector2[]
-            {
-                new Vector2(-1, -1), new Vector2(0, -1), new Vector2(1, -1),
-                new Vector2(-1,  0),                      new Vector2(1,  0),
-                new Vector2(-1,  1), new Vector2(0,  1), new Vector2(1,  1)
-            };
-
-            foreach (Vector2 offset in offsets)
-            {
-                Globals.spriteBatch.DrawString(_font, text, topLeft + offset * scale, outlineColor,
-                    0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-            }
-
-            // Draw main text
-            Globals.spriteBatch.DrawString(_font, text, topLeft, color,
-                0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
         }
 
         public void DrawTransition()
